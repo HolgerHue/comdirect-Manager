@@ -4,3 +4,4 @@
 
 | Datum | Sitzung | Modell | Tokens (geschätzt) | Kosten | Notiz |
 |---|---|---|---|---|---|
+| 2026-11-27 | Keel-Übernahme (Sprint 0) | Opus 5.5 | nicht auslesbar | Abo, ≈ 0 € Zusatzkosten | geschätzt |
