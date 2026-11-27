@@ -72,3 +72,24 @@
 - Why: Aussage des Nutzers vom 27.11.2026.
 - Alternatives rejected (and why): –
 - Supersedes: none
+
+## D-011 – Stop-Hook und Hooks wie bei der Hotelsoftware
+- Date / phase: 2026-11-27 / Adoption
+- Decision: `scripts/keel-stop-hook` (Kopie der Hotelsoftware), registriert in `.claude/settings.json`; Git-Hooks in `.githooks/` (`core.hooksPath`): pre-commit (vertrauliche Daten), pre-push (betroffene Prüfungen), post-commit (Übergabe löschen). Der Agent-Teams-Schalter wird nicht gesetzt (D-005).
+- Why: „Wie Hotelsoftware“ (D-001).
+- Alternatives rejected (and why): –
+- Supersedes: none
+
+## D-012 – Wettbewerbsanalyse übersprungen
+- Date / phase: 2026-11-27 / Adoption
+- Decision: Keine Wettbewerbsanalyse (`docs/00-competitive-landscape.md`) bei der Übernahme. Warnung: Ideen für die Weiterentwicklung stützen sich dann nur auf die Wünsche des Nutzers (Vorbild im Code: getquin).
+- Why: Für die Übernahme optional; Eigenprojekt mit klarem Umfang.
+- Alternatives rejected (and why): Analyse jetzt – nicht verlangt.
+- Supersedes: none
+
+## D-013 – Keine Assistenten-Konfiguration (Regeln/Agents) bei der Übernahme
+- Date / phase: 2026-11-27 / Adoption
+- Decision: `Assistant config: none` – keine `.claude/rules/` und `.claude/agents/`; Pre-commit-Prüfung trotzdem aktiv (D-011). Kann jederzeit nachgeholt werden.
+- Why: Voreinstellung bei der Übernahme; die Agent Skills stehen in der Sitzung ohnehin zur Verfügung.
+- Alternatives rejected (and why): Pakete wie Hotelsoftware kopieren – dort auf Django zugeschnitten.
+- Supersedes: none

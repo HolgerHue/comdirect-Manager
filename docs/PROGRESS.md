@@ -16,7 +16,7 @@
 - Installed base: in Betrieb mit echten Daten (D-006)
 - Design system: existing – Apple-UI mit „Liquid Glass“, hell/dunkel/System (im Code, keine Design-Quelle)
 - Keel portability: lock only (`CLAUDE.md`, `AGENTS.md`), nicht eingebettet (D-009)
-- Assistant config: none (tools: claude)
+- Assistant config: none (tools: claude) – D-013; Pre-commit-Prüfung aktiv (D-011)
 - E2E: n/a – läuft nur in Scriptable; Prüfung hier nur `node --check` (Syntax)
 - CI runs on: none
 - Models: n/a (die App selbst ruft die Anthropic-API mit dem Schlüssel des Nutzers)
@@ -41,8 +41,8 @@
 ## Phase status
 | Phase | Status | Key artifacts |
 |-------|--------|---------------|
-| 1 Discovery | in progress (Adoption) | docs/01-discovery.md |
-| 2 Functional spec | in progress (Adoption) | docs/02-functional-spec.md, docs/03-technical-plan.md |
+| 1 Discovery | adopted (as-built) | docs/01-discovery.md |
+| 2 Functional spec | adopted (as-built) | docs/02-functional-spec.md, docs/03-technical-plan.md, docs/flows/, docs/threat-model.md |
 | 3 Design handoff | adopted (as-built) – UI vor Keel, aktuelles Aussehen ist die Grundlinie, kein BUILD-SPEC | – |
 | 4 Faithful build | adopted (as-built) – siehe Phase 3 | – |
 | 5 Development | pending | docs/sprints/ |
@@ -51,11 +51,11 @@
 | 8 Website | n/a (D-009) | – |
 
 ## Current position
-- Phase: Adoption — Sprint 0, Scheibe S-005
-- Next action: S-005 Abgleich gegen MANIFEST
+- Phase: Adoption — Sprint 0, Scheibe S-007 (Abschluss)
+- Next action: Einordnung der Lücken G-01–G-11 durch den Nutzer (`docs/04-adoption-audit.md`), dann Sprint 1 planen
 
 ## Open items
-- Unresolved user questions: Lizenz (G-03)
+- Unresolved user questions: Einordnung G-01–G-11; Lizenz (G-03); Kategorien-Editor umstellen oder entfernen (G-02)
 - Open Design Requests: none
 - Unverified external steps/assets: Verhalten in Scriptable (hier nicht ausführbar)
 - Forge issues in progress: none
