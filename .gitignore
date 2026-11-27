@@ -1,0 +1,7 @@
+# Keel-Uhr (gerätelokal)
+docs/.keel/clock.jsonl
+docs/continuation-prompt.md
+.claude/settings.local.json
+.keel-update-check
+__pycache__/
+.DS_Store

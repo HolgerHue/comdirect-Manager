@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+"""Keel-Sitzungsuhr: der einzige Leser der Systemuhr (references/project-state.md, "Session time").
+
+  keel-time start [--plan S-1,S-2]   Sitzung öffnen, offene Vorgänger schließen, Startblock drucken
+  keel-time slice-start <id>         Intervall öffnen (exklusiv bei "Parallel development: off")
+  keel-time slice-end <id> --status done|in-progress|blocked
+  keel-time pause <grund> | resume   Wartezeit auf den Nutzer klammern
+  keel-time end                      offene Intervalle schließen, Zeile in docs/sessions.md, Bericht
+  keel-time report                   Bericht bis jetzt, schreibt nichts
+  keel-time plan                     docs/.keel/plan.json neu erzeugen
+  keel-time left                     "Was ist offen?" aus plan.json beantworten
+
+Die Rechenarbeit macht scripts/keel-clock (Kopie von Keels keel_clock.py).
+Alle Stunden sind KI-Arbeitszeit plus Begleitzeit des Nutzers.
+"""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import keel_common as kc  # noqa: E402
+
+CLOCK_HELPER = Path(__file__).resolve().parent / "keel-clock"
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def local(ts: str) -> str:
+    moment = datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).astimezone()
+    return moment.strftime("%a %d.%m.%Y, %H:%M %Z")
+
+
+def events() -> list[dict]:
+    if not kc.CLOCK.exists():
+        return []
+    return [json.loads(line) for line in kc.CLOCK.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def append(event: dict) -> None:
+    kc.KEEL.mkdir(parents=True, exist_ok=True)
+    with kc.CLOCK.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+def current_session() -> str | None:
+    open_session = None
+    for e in events():
+        if e["event"] == "session-start":
+            open_session = e["session"]
+        elif e["event"] == "session-end" and e.get("session") == open_session:
+            open_session = None
+    return open_session
+
+
+def clock(*args: str) -> dict | None:
+    out = subprocess.run([sys.executable, str(CLOCK_HELPER), *args, "--log", str(kc.CLOCK)],
+                         capture_output=True, text=True)
+    if out.returncode != 0:
+        sys.exit(f"keel-clock: {out.stderr.strip() or out.stdout.strip()}")
+    try:
+        return json.loads(out.stdout) if out.stdout.strip() else None
+    except json.JSONDecodeError:
+        return None
+
+
+def exclusive() -> bool:
+    value = (kc.card_value("Parallel development") or "").lower()
+    return value.startswith("off")
+
+
+def lifetime_hours(slice_id: str, session: str) -> float:
+    """Gemessene Stunden dieser Scheibe in dieser Sitzung (Intervalle minus Pausen)."""
+    report = clock("report", "--session", session, "--now", now())
+    for row in (report or {}).get("slices", []):
+        if row["id"] == slice_id:
+            return row["session_hours"]
+    return 0.0
+
+
+def write_actual(slice_id: str, session: str, status: str) -> tuple[float | None, float]:
+    path, data, body, item = kc.find_slice(slice_id)
+    previous = item.get("actual_hours") if item.get("actual_source") == "measured" else None
+    base = item.get("_session_base", {}).get(session, previous or 0.0)
+    measured = lifetime_hours(slice_id, session)
+    item["_session_base"] = {session: base}
+    item["actual_hours"] = round(base + measured, 2)
+    item["actual_source"] = "measured"
+    if status == "done":
+        item["status"] = "done"
+        item["residual_hours"] = 0
+        item.pop("_session_base", None)
+    elif item["status"] == "not-started":
+        item["status"] = "in-progress"
+    kc.write_frontmatter(path, data, body)
+    kc.write_plan()
+    return item.get("original_hours"), item["actual_hours"]
+
+
+def left_lines(plan: dict) -> list[str]:
+    lines = []
+    for sprint in plan["sprints"]:
+        pending = [s for s in sprint["slices"] if s["status"] not in ("done", "dropped")]
+        if not pending:
+            continue
+        lines.append(f"Sprint {sprint['sprint']} – {sprint['goal']}: {len(pending)} Scheiben offen, "
+                     f"{kc.fmt_h(sprint['remaining_hours'])}")
+        for s in pending:
+            wait = f" (wartet: {s['blocked_by']})" if s.get("blocked_by") else ""
+            lines.append(f"  {s['id']} {s['title']} – {kc.fmt_h(s['residual_hours'])}{wait}")
+    t = plan["totals"]
+    lines.append(f"Gesamt offen: {kc.fmt_h(t['remaining_hours'])} KI-Arbeitszeit plus Begleitung "
+                 f"(ohne Reserve, ohne Zurückgestelltes; {plan['reconciliation_status']})")
+    lines.append(f"Bisher: {kc.fmt_h(t['completed_original_hours'])} geschätzt, "
+                 f"{kc.fmt_h(t['actual_hours'])} tatsächlich (Abweichung {kc.fmt_h(t['deviation_hours'])})")
+    if t["pace_factor"] is None:
+        lines.append("Hochrechnung beim beobachteten Tempo: nicht verfügbar – noch keine gemessene fertige Arbeit")
+    else:
+        n = t["pace_sample"]["slices"]
+        lines.append(f"Hochrechnung beim beobachteten Tempo: {kc.fmt_h(t['projected_remaining_hours'])} "
+                     f"(Faktor {t['pace_factor']}; {n} gemessene Scheiben{', vorläufig' if n < 5 else ''})")
+    return lines
+
+
+def cmd_start(args: list[str]) -> None:
+    previous = current_session()
+    if previous:
+        last = [e for e in events() if e.get("session") == previous][-1]["at"]
+        append({"schema": "keel.clock/1", "event": "session-end", "at": last, "session": previous,
+                "unterminated": True})
+        finish_session(previous, note="unterminated")
+    plan = kc.write_plan()
+    planned = []
+    if "--plan" in args:
+        planned = args[args.index("--plan") + 1].split(",")
+    else:
+        planned = [s["id"] for sp in plan["sprints"] for s in sp["slices"]
+                   if s["status"] == "in-progress"]
+    hours = {s["id"]: s for sp in plan["sprints"] for s in sp["slices"]}
+    planned_hours = sum(hours[i]["residual_hours"] for i in planned if i in hours)
+    ts = now()
+    append({"schema": "keel.clock/1", "event": "session-start", "at": ts, "session": ts,
+            "planned": planned, "planned_hours": planned_hours})
+    print(f"Sitzungsbeginn – {local(ts)} (Systemuhr)")
+    print("\n".join(left_lines(plan)))
+    print("Diese Sitzung plant:")
+    for i in planned:
+        s = hours.get(i)
+        print(f"  {i} {s['title'] if s else '(nicht im Plan!)'} – {kc.fmt_h(s['residual_hours'] if s else None)}")
+    print(f"  Geplant: {kc.fmt_h(planned_hours)} KI-Arbeitszeit plus Begleitung")
+
+
+def need_session() -> str:
+    session = current_session()
+    if not session:
+        sys.exit("keine offene Sitzung – zuerst: scripts/keel-time start")
+    return session
+
+
+def cmd_slice_start(args: list[str]) -> None:
+    session = need_session()
+    kc.find_slice(args[0])
+    extra = ["--exclusive"] if exclusive() else []
+    clock("slice-start", args[0], "--session", session, "--at", now(), *extra)
+    print(f"{args[0]} gestartet ({local(now())})")
+
+
+def cmd_slice_end(args: list[str]) -> None:
+    session = need_session()
+    status = args[args.index("--status") + 1] if "--status" in args else "done"
+    clock("slice-end", args[0], "--status", status, "--session", session, "--at", now())
+    est, act = write_actual(args[0], session, status)
+    print(f"{args[0]} {status}: geschätzt {kc.fmt_h(est)}, gemessen {kc.fmt_h(act)}")
+
+
+def cmd_pause(args: list[str]) -> None:
+    append({"schema": "keel.clock/1", "event": "pause", "at": now(), "session": need_session(),
+            "reason": " ".join(args) or "Warten auf den Nutzer"})
+
+
+def cmd_resume(_args: list[str]) -> None:
+    append({"schema": "keel.clock/1", "event": "resume", "at": now(), "session": need_session()})
+
+
+def report_text(rep: dict, plan: dict) -> list[str]:
+    def hm(h):
+        return f"{int(h)} h {round((h % 1) * 60):02d} min"
+    start, end = rep["start"], rep["end"]
+    lines = [f"Sitzung – {local(start)} → {local(end)} ({hm(rep['wall_clock_hours'])} Gesamtzeit, "
+             f"{hm(rep['paused_hours'])} Pause, {hm(rep['active_hours'])} aktiv)",
+             f"Scheibenstunden: {kc.fmt_h(rep['summed_slice_hours'])} · max. Gleichzeitigkeit "
+             f"{rep['max_concurrency']} ({'parallel' if rep['max_concurrency'] > 1 else 'seriell'})"]
+    planned = [e for e in events() if e.get("session") == rep["session"] and e["event"] == "session-start"]
+    if planned:
+        p = planned[0]
+        lines.append(f"Geplant zu Beginn: {', '.join(p.get('planned', [])) or '—'} – {kc.fmt_h(p.get('planned_hours'))}")
+    done = [r for r in rep["slices"] if r["status"] == "done"]
+    lines.append("Erledigt:" if done else "Erledigt: nichts")
+    for r in done:
+        lines.append(f"  {r['id']} – geschätzt {kc.fmt_h(r.get('estimated_hours'))}, "
+                     f"gemessen {kc.fmt_h(r['measured_hours'])}")
+    rest = [r for r in rep["slices"] if r["status"] != "done"]
+    if rest:
+        lines.append("Nicht fertig:")
+        lines += [f"  {r['id']} – bisher {kc.fmt_h(r['session_hours'])} in dieser Sitzung" for r in rest]
+    lines.append(f"Abweichung bei fertiger Arbeit: geschätzt {kc.fmt_h(rep['done_estimated_hours'])} → "
+                 f"gemessen {kc.fmt_h(rep['done_measured_hours'])} ({kc.fmt_h(rep['deviation_hours'])})")
+    if rep.get("throughput") is not None:
+        lines.append(f"Durchsatz: {rep['throughput']:.2f} geschätzte h je aktive h")
+    lines += left_lines(plan)
+    return lines
+
+
+def finish_session(session: str, note: str = "") -> dict:
+    plan = kc.write_plan()
+    rep = clock("report", "--session", session, "--plan", str(kc.PLAN_JSON), "--sessions", str(kc.SESSIONS))
+    t = plan["totals"]
+    proj = rep["projection"]
+    row = [rep["start"], rep["end"], f"{rep['wall_clock_hours']:.2f}", f"{rep['paused_hours']:.2f}",
+           ", ".join(next((e.get("planned", []) for e in events() if e.get("session") == session
+                           and e["event"] == "session-start"), [])) or "—",
+           ", ".join(rep["done"]) or "—",
+           f"{rep['done_estimated_hours']:.2f}", f"{rep['done_measured_hours']:.2f}",
+           f"{rep['deviation_hours']:.2f}",
+           ", ".join(f"{r['id']} ({r['session_hours']:.2f})" for r in rep["slices"] if r["status"] != "done") or "—",
+           f"{t['remaining_hours']:.2f}", f"{rep['active_hours']:.2f}",
+           "—" if t["pace_factor"] is None else f"{t['pace_factor']:.4f}",
+           "—" if t["projected_remaining_hours"] is None else f"{t['projected_remaining_hours']:.2f}",
+           f"{rep['summed_slice_hours']:.2f}", str(rep["max_concurrency"]),
+           "—" if rep.get("throughput") is None else f"{rep['throughput']:.2f}",
+           proj.get("basis") or ("none" if t["remaining_hours"] == 0 else "pace"),
+           "; ".join(x for x in (note, proj.get("reason") or "") if x)]
+    with kc.SESSIONS.open("a", encoding="utf-8") as fh:
+        fh.write("| " + " | ".join(row) + " |\n")
+    return rep
+
+
+def cmd_end(_args: list[str]) -> None:
+    session = need_session()
+    ts = now()
+    rep = clock("report", "--session", session, "--now", ts)
+    for r in rep["slices"]:
+        if r["status"] != "done":
+            clock("slice-end", r["id"], "--status", "in-progress", "--session", session, "--at", ts)
+            write_actual(r["id"], session, "in-progress")
+    append({"schema": "keel.clock/1", "event": "session-end", "at": ts, "session": session})
+    rep = finish_session(session)
+    print("\n".join(report_text(rep, kc.build_plan())))
+
+
+def cmd_report(_args: list[str]) -> None:
+    session = need_session()
+    plan = kc.write_plan()
+    rep = clock("report", "--session", session, "--now", now(), "--plan", str(kc.PLAN_JSON),
+                "--sessions", str(kc.SESSIONS))
+    print("\n".join(report_text(rep, plan)))
+
+
+def cmd_plan(_args: list[str]) -> None:
+    plan = kc.write_plan()
+    print(f"{kc.PLAN_JSON.relative_to(kc.PROJECT)} neu erzeugt – offen {kc.fmt_h(plan['totals']['remaining_hours'])}")
+
+
+def cmd_left(_args: list[str]) -> None:
+    print("\n".join(left_lines(kc.write_plan())))
+
+
+COMMANDS = {"start": cmd_start, "slice-start": cmd_slice_start, "slice-end": cmd_slice_end,
+            "pause": cmd_pause, "resume": cmd_resume, "end": cmd_end, "report": cmd_report,
+            "plan": cmd_plan, "left": cmd_left}
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        sys.exit(__doc__)
+    COMMANDS[sys.argv[1]](sys.argv[2:])

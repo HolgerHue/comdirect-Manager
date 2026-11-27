@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Prüft docs/continuation-prompt.md mechanisch (Keel, project-state.md "The continuation file").
+
+  scripts/keel-handoff-verify [<pfad>]   eine Zeile je Prüfung, dann VERDICT: CONTINUE|STOP
+  scripts/keel-handoff-verify --release  gibt die Spur frei (hier: Chaining off, nichts zu tun)
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+PROJECT = Path(__file__).resolve().parent.parent
+MAX_AGE_H = 72
+
+
+def git(*args: str) -> str:
+    return subprocess.run(["git", "-C", str(PROJECT), *args], capture_output=True, text=True).stdout.strip()
+
+
+def repo_id() -> str:
+    if git("rev-parse", "--is-shallow-repository") == "true":
+        return "unavailable (shallow)"
+    roots = sorted(git("rev-list", "--max-parents=0", "HEAD").split())
+    return roots[0][:7] if roots else ""
+
+
+def main() -> int:
+    if "--release" in sys.argv:
+        print("release: Chaining off (D-011) – keine Spur belegt")
+        return 0
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else PROJECT / "docs/continuation-prompt.md"
+    if not path.exists():
+        print("hand-off: keine Datei – normal, weiter aus docs/PROGRESS.md")
+        print("VERDICT: STOP")
+        return 0
+    text = path.read_text(encoding="utf-8")
+    head = dict(re.findall(r"^(\w+): (.*)$", text.split("\n---\n", 2)[0] if text.startswith("---") else "", re.M))
+    ok = True
+
+    def line(name: str, good: bool | None, detail: str) -> None:
+        nonlocal ok
+        ok = ok and good is not False
+        print(f"{'OK ' if good else 'N/A' if good is None else 'BAD'} {name}: {detail}")
+
+    top = Path(git("rev-parse", "--show-toplevel")).resolve()
+    real = path.resolve()
+    line("containment", top in real.parents, f"{real} in {top}")
+    rid = head.get("Repo", "")
+    here = repo_id()
+    if rid.startswith("unavailable") or here.startswith("unavailable"):
+        line("repo", None, "nicht prüfbar (shallow) – Containment trägt")
+    else:
+        line("repo", rid == here, f"{rid} / {here}")
+    commit, headc = head.get("Commit", ""), git("rev-parse", "--short", "HEAD")
+    if commit and headc.startswith(commit[:7]) or commit == headc:
+        line("commit", True, commit)
+    else:
+        behind = git("rev-list", "--count", f"{commit}..HEAD") if commit else "?"
+        line("commit", False, f"{commit} ist {behind} Commits hinter HEAD {headc}")
+    try:
+        gen = datetime.fromisoformat(head.get("Generated", "")).timestamp()
+        mtime = os.stat(real).st_mtime
+        fresh = time.time() - gen < MAX_AGE_H * 3600 and abs(mtime - gen) < 3600
+        line("generated", fresh, f"{head.get('Generated')} (Datei {datetime.fromtimestamp(mtime).isoformat(timespec='seconds')})")
+    except ValueError:
+        line("generated", False, "fehlt oder unlesbar")
+    dirty = bool(git("status", "--porcelain", "--", ".", ":(exclude)docs/continuation-prompt.md"))
+    claimed = head.get("Tree", "")
+    line("tree", (claimed == "clean") != dirty, f"Kopf {claimed}, jetzt {'dirty' if dirty else 'clean'}")
+    branch = git("rev-parse", "--abbrev-ref", "HEAD")
+    line("branch", branch in head.get("Branch", ""), f"{branch}")
+    print(f"position (Prosa, nicht mechanisch): {head.get('Position', '—')}")
+    print(f"VERDICT: {'CONTINUE' if ok else 'STOP'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
