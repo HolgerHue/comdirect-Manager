@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Keel-Prüfung auf vertrauliche Daten vor jedem Commit (Projektregel, SKILL.md "Confidential data").
+# Ein Fund stoppt den Commit. Bewusst sichere Datei: Entscheidung in docs/decisions.md, dann
+# einmalig KEEL_ALLOW_SECRET_PATHS="pfad1 pfad2" setzen.
+set -u
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$files" ] && exit 0
+found=0
+name_re='(^|/)(\.env(\..*)?|id_rsa[^/]*|[^/]*\.(pem|key|p12|pfx|sqlite3?|sql|dump|bak))$|credentials|secret[^/]*\.(json|ya?ml|txt)$'
+content_re='-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}|(password|passwd|secret|api_?key|token)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"'$]{12,}["'"'"']'
+allow=" ${KEEL_ALLOW_SECRET_PATHS:-} "
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$allow" in *" $f "*) continue ;; esac
+  case "$f" in *.env.example|*/tests/*|*/test_*.py|*/conftest.py|*/fixtures/*|*/node_modules/*|*/migrations/*|*/Migrations/*) is_test=1 ;; *) is_test=0 ;; esac
+  if [ $is_test = 0 ] && echo "$f" | grep -Eiq "$name_re"; then
+    echo "VERTRAULICH? Dateiname: $f"; found=1
+  fi
+  # Zeilen mit "noqa: S105/S106" sind im Code als geprüft markiert (kein Geheimnis, D-024)
+  if git show ":$f" 2>/dev/null | grep -Ev 'noqa: S10[56]' | grep -IEiq -- "$content_re"; then
+    hit=$(git show ":$f" | grep -Ein -- "$content_re" | grep -Ev 'noqa: S10[56]' | head -2 | cut -c1-80)
+    if [ $is_test = 0 ] || echo "$hit" | grep -q 'PRIVATE KEY'; then
+      echo "VERTRAULICH? Inhalt: $f"; echo "$hit" | sed 's/^/    /'; found=1
+    fi
+  fi
+done <<< "$files"
+if [ $found = 1 ]; then
+  cat <<'MSG'
+
+Commit gestoppt: Diese Dateien sehen nach Passwörtern, Schlüsseln, Tokens oder echten Daten aus.
+Sie ins Repository zu bringen ist ein ernstes Sicherheitsrisiko. Datei über .gitignore ausschließen
+(schon versioniert: git rm --cached; schon gepusht: Verlauf bereinigen UND Zugang austauschen).
+MSG
+  exit 1
+fi
+exit 0

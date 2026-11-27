@@ -51,8 +51,8 @@
 | 8 Website | n/a (D-009) | – |
 
 ## Current position
-- Phase: Adoption — Sprint 0, Scheibe S-004
-- Next action: S-004 Keel-Werkzeugskripte und Git-Hooks
+- Phase: Adoption — Sprint 0, Scheibe S-005
+- Next action: S-005 Abgleich gegen MANIFEST
 
 ## Open items
 - Unresolved user questions: Lizenz (G-03)

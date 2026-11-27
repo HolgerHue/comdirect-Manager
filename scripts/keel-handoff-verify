@@ -32,7 +32,7 @@ def repo_id() -> str:
 
 def main() -> int:
     if "--release" in sys.argv:
-        print("release: Chaining off (D-011) – keine Spur belegt")
+        print("release: Chaining off (D-005) – keine Spur belegt")
         return 0
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else PROJECT / "docs/continuation-prompt.md"
     if not path.exists():
