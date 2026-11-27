@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Keel: Ein Commit macht jede Übergabe ungültig – sie wird gelöscht, sonst nichts.
+rm -f "$(git rev-parse --show-toplevel)/docs/continuation-prompt.md"
+exit 0

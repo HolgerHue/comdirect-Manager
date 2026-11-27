@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Keel-Abschluss als ein Befehl (project-state.md "scripts/keel-close"), angepasst an dieses Projekt:
+# Autonomy: not automatic → kein Push, kein Merge (D-003); Chaining: off → kein Start eines neuen Chats (D-005).
+#   scripts/keel-close "<Position>" "<Handover: clean|blocked: …>"
+set -u
+cd "$(dirname "$0")/.."
+here="$(pwd)"
+pos="${1:-siehe docs/PROGRESS.md}"
+handover="${2:-clean}"
+step() { printf '\n== %s\n' "$1"; }
+
+step "0 keel-time end"
+scripts/keel-time end || echo "(keine offene Sitzung)"
+
+step "1 Prüfung auf vertrauliche Daten und Commit"
+git add -- docs/sprints docs/sessions.md docs/.keel/plan.json docs/PROGRESS.md docs/token-ledger.md 2>/dev/null
+rest="$(git status --porcelain -- . | grep -v '^[AM]  ')"
+[ -n "$rest" ] && { echo "nicht vom Abschluss erfasst (selbst committen, ausdrückliche Pfade):"; echo "$rest"; }
+if git diff --cached --quiet; then echo "nichts zu committen"
+else
+  .githooks/pre-commit || { echo "STOP: Fund – nichts committet"; exit 1; }
+  git commit -q --no-verify -m "Keel: Sitzungsabschluss (Zeit, Plan)" && git log --oneline -1
+fi
+
+step "2 keel-verify"
+scripts/keel-verify --quiet || { echo "STOP: keel-verify rot – Abschluss abgebrochen"; exit 1; }
+
+step "3 Push"
+up="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)"
+if [ -n "$up" ]; then echo "nicht gepusht (Push nur auf Anweisung, D-003):"; git log --oneline "$up..HEAD"
+else echo "kein Upstream – nicht gepusht (Push nur auf Anweisung, D-003):"; git log --oneline origin/main..HEAD; fi
+
+step "4 docs/continuation-prompt.md"
+repo="$(git rev-list --max-parents=0 HEAD | sort | head -1 | cut -c1-7)"
+[ "$(git rev-parse --is-shallow-repository)" = true ] && repo="unavailable (shallow)"
+tree=clean; [ -n "$(git status --porcelain -- .)" ] && tree=dirty
+branch="$(git rev-parse --abbrev-ref HEAD)"
+keel="$(grep -m1 -oE "Keel baseline: v[0-9.]+" docs/PROGRESS.md | cut -d" " -f3)"
+cat > docs/continuation-prompt.md <<HANDOFF
+---
+Repo: $repo
+Generated: $(date +%Y-%m-%dT%H:%M:%S%:z)
+Keel: $keel
+Commit: $(git rev-parse --short HEAD)
+Tree: $tree
+Position: $pos
+Branch: $branch (nicht gepusht: $(git log --oneline "${up:-origin/main}..HEAD" | wc -l) Commits); nichts wartet auf main
+Mode: not automatic — chaining off
+Handover: $handover
+---
+
+Fortsetzung des comdirect-Managers im Repository HolgerHue/comdirect-Manager, Ordner $here.
+1. Lies das installierte Keel-SKILL.md vollständig (Wartungsblock zuerst) und CLAUDE.md (Projektregeln haben Vorrang, D-001).
+2. Führe scripts/keel-handoff-verify aus und folge dem VERDICT.
+3. Lies docs/PROGRESS.md, docs/decisions.md, docs/lessons-learned.md; dann scripts/keel-time start.
+4. Weiter bei: $pos
+Regeln: kein develop, Push/Merge nur auf Anweisung, keine Agent-Teams, Doku auf Deutsch.
+HANDOFF
+sed -n 1,11p docs/continuation-prompt.md
+
+step "5 Chain-Check / 6 Fortsetzung"
+echo "Chaining: off (D-005) – Prompt oben bzw. in docs/continuation-prompt.md zum Kopieren"
+
+step "7 Spur freigeben"
+scripts/keel-handoff-verify --release
+
+step "8 Abschluss vermerken"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/keel/closeouts"; mkdir -p "$state"
+key="$(echo "$here" | sha1sum | cut -c1-12)"
+git rev-parse HEAD > "$state/$key-${CLAUDE_SESSION_ID:-session}"
+echo "vermerkt: $state/$key-${CLAUDE_SESSION_ID:-session}"

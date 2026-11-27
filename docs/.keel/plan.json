@@ -1,0 +1,386 @@
+{
+  "schema": "keel.plan/1",
+  "unit": "hours of AI working time plus supervision",
+  "reconciliation_status": "reconciled",
+  "scope_delta": {
+    "added_scope": 0,
+    "extraction": 0,
+    "explicit_reestimates": 0
+  },
+  "sprints": [
+    {
+      "sprint": 0,
+      "goal": "Keel-Übernahme (Adoption) des comdirect-Managers, ohne Codeänderung",
+      "status": "done",
+      "file": "docs/sprints/sprint-0.md",
+      "slices": [
+        {
+          "id": "S-001",
+          "title": "Bestandsaufnahme (nur lesen)",
+          "status": "done",
+          "original_hours": 0.25,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-1"
+          ],
+          "estimate_changes": [],
+          "actual_hours": 0.25,
+          "actual_source": "estimated",
+          "depends_on": [],
+          "criteria": [
+            "ADOPT-1"
+          ]
+        },
+        {
+          "id": "S-002",
+          "title": "Zustandsdateien, Portabilitäts-Sperre, Plan, Zeitmessung",
+          "status": "done",
+          "original_hours": 0.75,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-2"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-001"
+          ],
+          "criteria": [
+            "ADOPT-2"
+          ],
+          "actual_hours": 0.02,
+          "actual_source": "measured"
+        },
+        {
+          "id": "S-003",
+          "title": "01-discovery, 02-functional-spec, 03-technical-plan, api/INDEX als Ist-Stand",
+          "status": "done",
+          "original_hours": 1.5,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-4"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-002"
+          ],
+          "criteria": [
+            "ADOPT-4"
+          ],
+          "actual_hours": 0.03,
+          "actual_source": "measured"
+        },
+        {
+          "id": "S-004",
+          "title": "Keel-Werkzeugskripte und Git-Hooks",
+          "status": "done",
+          "original_hours": 0.75,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-2b"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-002"
+          ],
+          "criteria": [
+            "ADOPT-2b"
+          ],
+          "actual_hours": 0.02,
+          "actual_source": "measured"
+        },
+        {
+          "id": "S-005",
+          "title": "Abgleich gegen MANIFEST (keel-conformance.md)",
+          "status": "done",
+          "original_hours": 0.75,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-4a"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-003",
+            "S-004"
+          ],
+          "criteria": [
+            "ADOPT-4a"
+          ],
+          "actual_hours": 0.03,
+          "actual_source": "measured"
+        },
+        {
+          "id": "S-006",
+          "title": "Lückenprüfung (04-adoption-audit.md), Selbstprüfung Fallen, Bedrohungsmodell",
+          "status": "done",
+          "original_hours": 1.5,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-5"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-005"
+          ],
+          "criteria": [
+            "ADOPT-5"
+          ],
+          "actual_hours": 0.02,
+          "actual_source": "measured"
+        },
+        {
+          "id": "S-007",
+          "title": "Abschluss: Commit, Übergabe",
+          "status": "done",
+          "original_hours": 0.25,
+          "residual_hours": 0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "ADOPT-6"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-006"
+          ],
+          "criteria": [
+            "ADOPT-6"
+          ],
+          "actual_hours": 0.0,
+          "actual_source": "measured"
+        }
+      ],
+      "original_estimated_hours": 5.75,
+      "completed_original_hours": 5.75,
+      "actual_hours": 0.37,
+      "remaining_hours": 0,
+      "percent_done": 100.0
+    },
+    {
+      "sprint": 1,
+      "goal": "Lücken „jetzt“ aus der Übernahme beheben (D-014)",
+      "status": "not-started",
+      "file": "docs/sprints/sprint-1.md",
+      "slices": [
+        {
+          "id": "S-008",
+          "title": "G-02 Kategorien-Editor.js entfernen, Doku und INDEX anpassen",
+          "status": "not-started",
+          "original_hours": 0.25,
+          "residual_hours": 0.25,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-02"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-02"
+          ]
+        },
+        {
+          "id": "S-009",
+          "title": "G-01 README auf Finance.js 3.31 (Depotbestand) umstellen",
+          "status": "not-started",
+          "original_hours": 0.5,
+          "residual_hours": 0.5,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-01"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-008"
+          ],
+          "criteria": [
+            "G-01"
+          ]
+        },
+        {
+          "id": "S-010",
+          "title": "G-05 Testgerüst (Node, Attrappen der Scriptable-APIs) und erste Tests: toNumber, Parser Finanzreport/Steuer, FIFO",
+          "status": "not-started",
+          "original_hours": 3.0,
+          "residual_hours": 3.0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-05"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-05"
+          ]
+        },
+        {
+          "id": "S-011",
+          "title": "G-07 Sicherheitsaudit nach references/security-audit.md (HTML-Ausgabe, Aktionen, Order)",
+          "status": "not-started",
+          "original_hours": 3.0,
+          "residual_hours": 3.0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-07"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-07"
+          ]
+        }
+      ],
+      "original_estimated_hours": 6.75,
+      "completed_original_hours": 0,
+      "actual_hours": 0,
+      "remaining_hours": 6.75,
+      "percent_done": 0.0
+    }
+  ],
+  "totals": {
+    "original_estimated_hours": 12.5,
+    "completed_original_hours": 5.75,
+    "actual_hours": 0.37,
+    "remaining_hours": 6.75,
+    "deviation_hours": -5.38,
+    "pace_factor": 0.0218,
+    "pace_sample": {
+      "slices": 6,
+      "estimated_hours": 5.5,
+      "actual_hours": 0.12
+    },
+    "projected_remaining_hours": 0.1473,
+    "percent_done": 46.0
+  },
+  "deferred": [
+    {
+      "id": "S-012",
+      "title": "G-04 Namen vereinheitlichen (ohne APP.name zu ändern)",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-04"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-04"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-013",
+      "title": "G-06 Doppelungen messen und zusammenführen",
+      "status": "not-started",
+      "original_hours": 2.0,
+      "residual_hours": 2.0,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-06"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-06"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-014",
+      "title": "G-08 Hinweis Datenschutz bei KI-Vorschlägen",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-08"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-08"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-015",
+      "title": "G-09 Prüfsumme für pdf.js",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-09"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-09"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-016",
+      "title": "G-10 Barrierefreiheit der WebView-Seiten prüfen",
+      "status": "not-started",
+      "original_hours": 2.0,
+      "residual_hours": 2.0,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-10"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-10"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-017",
+      "title": "G-11 Forge-Issues erfassen (docs/issues.md)",
+      "status": "not-started",
+      "original_hours": 0.25,
+      "residual_hours": 0.25,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-11"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-11"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    }
+  ],
+  "note": "Generated by scripts/keel-time plan. Never edit by hand. Contingency and deferred items excluded."
+}

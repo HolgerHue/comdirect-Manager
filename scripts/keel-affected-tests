@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Keel: nur die Prüfungen, die eine Änderung erreicht (test-automation.md "Which tests run when").
+
+  scripts/keel-affected-tests [--base <ref>] [--run]
+
+Ohne --run wird die Auswahl nur gedruckt. Auswahl:
+- geänderte `*.js` im Wurzelordner → `node --check <datei>`
+- geänderte oder neue Tests unter `tests/` und Tests zu einer geänderten Skriptdatei
+  (`tests/<skript>*.test.js`) → `node --test <datei>`
+- Änderung an `scripts/`, `docs/sprints/`, `docs/keel-conformance.md` → `scripts/keel-verify`
+Eine Auswahl, die bei geänderter Skriptdatei leer bleibt, ist ein Fehler, nie grün.
+"""
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def changed(base: str) -> list[str]:
+    out = subprocess.run(["git", "-C", str(ROOT), "diff", "--name-only", "--diff-filter=ACMR", f"{base}...HEAD"],
+                         capture_output=True, text=True)
+    files = set(out.stdout.split())
+    out = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain"], capture_output=True, text=True)
+    files |= {line[3:].split(" -> ")[-1] for line in out.stdout.splitlines() if line.strip()}
+    return sorted(files)
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    base = args[args.index("--base") + 1] if "--base" in args else "origin/main"
+    run = "--run" in args
+    files = changed(base)
+    cmds: list[list[str]] = []
+    scripts = [f for f in files if f.endswith(".js") and "/" not in f]
+    for f in scripts:
+        cmds.append(["node", "--check", f])
+        for t in sorted((ROOT / "tests").glob(f"{Path(f).stem}*.test.js")):
+            cmds.append(["node", "--test", str(t.relative_to(ROOT))])
+    for f in files:
+        if f.startswith("tests/") and f.endswith(".test.js") and (ROOT / f).exists():
+            cmd = ["node", "--test", f]
+            if cmd not in cmds:
+                cmds.append(cmd)
+    if any(f.startswith(("scripts/", "docs/sprints/", "docs/keel-conformance.md", "docs/api/")) for f in files) or scripts:
+        cmds.append(["python3", "scripts/keel-verify", "--quiet"])
+    if scripts and not cmds:
+        print("FEHLER: Skript geändert, aber keine Prüfung ausgewählt")
+        return 1
+    if not cmds:
+        print("keine betroffenen Prüfungen (nur Dokumente geändert)")
+        return 0
+    rc = 0
+    for cmd in cmds:
+        print("→", " ".join(cmd))
+        if run and subprocess.run(cmd, cwd=ROOT).returncode != 0:
+            rc = 1
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

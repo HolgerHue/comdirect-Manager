@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""Keel-Prüfung dieses Projekts: prüft mechanisch, was die Dokumente versprechen.
+
+Aufruf: scripts/keel-verify [--quiet]
+Ausgabe: eine Zeile je Prüfung (OK / FAIL / N/A), Exit 1 bei einem FAIL.
+"""
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import keel_common as kc  # noqa: E402
+
+P = kc.PROJECT
+results: list[tuple[str, str, str]] = []
+
+
+def check(name: str, ok: bool | None, detail: str = "") -> None:
+    results.append(("N/A" if ok is None else "OK" if ok else "FAIL", name, detail))
+
+
+def read(rel: str) -> str:
+    path = P / rel
+    return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+# Zustandsdateien
+for rel in ("docs/PROGRESS.md", "docs/decisions.md", "docs/lessons-learned.md", "docs/sessions.md",
+            "docs/01-discovery.md", "docs/02-functional-spec.md", "docs/03-technical-plan.md", "docs/api/INDEX.md",
+            "CLAUDE.md", "AGENTS.md"):
+    check(f"vorhanden: {rel}", (P / rel).exists())
+for rel in ("docs/keel-conformance.md", "docs/04-adoption-audit.md", "docs/threat-model.md"):
+    check(f"vorhanden: {rel}", (P / rel).exists() or None, "" if (P / rel).exists() else "noch nicht angelegt")
+
+# Sperre in beiden Dateien, gleicher Block
+blocks = [re.search(r"<!-- KEEL:BEGIN.*?KEEL:END -->", read(f), re.S) for f in ("CLAUDE.md", "AGENTS.md")]
+check("Keel-Sperre gleich in CLAUDE.md und AGENTS.md", all(blocks) and blocks[0].group(0) == blocks[1].group(0))
+
+# Plan aktuell und vollständig
+try:
+    fresh = kc.build_plan()
+    stored = json.loads(read("docs/.keel/plan.json") or "{}")
+    strip = lambda d: {k: v for k, v in d.items() if k != "generated"}  # noqa: E731
+    check("plan.json passt zu den Sprint-Dateien", strip(fresh) == strip(stored), "scripts/keel-time plan")
+except Exception as exc:  # noqa: BLE001
+    check("plan.json passt zu den Sprint-Dateien", False, str(exc))
+bad = [s["id"] for _, data, _ in kc.load_sprints() for s in data.get("slices", [])
+       if s.get("status") == "done" and s.get("actual_hours") is None]
+check("erledigte Scheiben haben actual_hours", not bad, ", ".join(bad))
+
+# Version: APP.version = letzte Versionszeile im Kopf
+src = read("Finance.js")
+app = re.search(r'const APP = \{[^}]*version: "([^"]+)"', src)
+heads = re.findall(r"^// Version ([0-9.]+):", src, re.M)
+check("Finance.js: APP.version = letzte Versionszeile", bool(app and heads and app.group(1) == heads[-1]),
+      f"{app.group(1) if app else '?'} / {heads[-1] if heads else '?'}")
+
+# Aktionen im INDEX = Aktionen im Verteiler
+acts = set(re.findall(r'action === "([a-zA-Z0-9_-]+)"', src))
+index = set(re.findall(r"^\| `([a-zA-Z0-9_-]+)` \|$", read("docs/api/INDEX.md"), re.M))
+check("docs/api/INDEX.md listet alle Aktionen", acts == index,
+      f"fehlt: {sorted(acts - index)} zu viel: {sorted(index - acts)}" if acts != index else f"{len(acts)} Aktionen")
+
+# Syntax der Skripte
+for f in ("Finance.js", "Kategorien-Editor.js"):
+    r = subprocess.run(["node", "--check", f], cwd=P, capture_output=True, text=True)
+    check(f"node --check {f}", r.returncode == 0, r.stderr.strip()[:120])
+
+# Abgleich gegen MANIFEST
+conf = read("docs/keel-conformance.md")
+if conf:
+    decisions = set(re.findall(r"^## (D-\d+)", read("docs/decisions.md"), re.M))
+    rows = [r for r in conf.splitlines() if r.startswith("| ") and not r.startswith("| Requirement") and not r.startswith("|---")]
+    missing = [r.split("|")[1].strip() for r in rows if r.split("|")[2].strip() == "missing"]
+    blank = [r.split("|")[1].strip() for r in rows if r.split("|")[2].strip() not in {"present", "missing", "declined", "n/a"}]
+    undecl = [r.split("|")[1].strip() for r in rows if r.split("|")[2].strip() == "declined"
+              and not (set(re.findall(r"D-\d+", r.split("|")[3])) & decisions)]
+    check("keel-conformance: kein Zustand fehlt", not blank, ", ".join(blank))
+    check("keel-conformance: nichts missing", not missing, ", ".join(missing))
+    check("keel-conformance: declined mit D-Eintrag", not undecl, ", ".join(undecl))
+
+# .gitignore
+gi = read(".gitignore")
+check(".gitignore: clock.jsonl und continuation-prompt", "docs/.keel/clock.jsonl" in gi and "docs/continuation-prompt.md" in gi)
+
+quiet = "--quiet" in sys.argv
+fails = [r for r in results if r[0] == "FAIL"]
+for state, name, detail in results:
+    if not quiet or state == "FAIL":
+        print(f"{state:4} {name}" + (f" – {detail}" if detail else ""))
+print(f"keel-verify: {len(results)} Prüfungen, {len(fails)} FAIL")
+sys.exit(1 if fails else 0)
