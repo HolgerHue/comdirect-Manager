@@ -45,23 +45,24 @@
 | 2 Functional spec | adopted (as-built) | docs/02-functional-spec.md, docs/03-technical-plan.md, docs/flows/, docs/threat-model.md |
 | 3 Design handoff | adopted (as-built) – UI vor Keel, aktuelles Aussehen ist die Grundlinie, kein BUILD-SPEC | – |
 | 4 Faithful build | adopted (as-built) – siehe Phase 3 | – |
-| 5 Development | pending | docs/sprints/ |
+| 5 Development | pending – Sprint 1 geplant (S-008–S-011) | docs/sprints/ |
 | 6 Documentation | pending | – |
 | 7 Release | pending | – |
 | 8 Website | n/a (D-009) | – |
 
 ## Current position
-- Phase: Adoption — Sprint 0, Scheibe S-007 (Abschluss)
-- Next action: Einordnung der Lücken G-01–G-11 durch den Nutzer (`docs/04-adoption-audit.md`), dann Sprint 1 planen
+- Phase: 5 — Development  Step/sprint: Sprint 1, nächste Scheibe S-008
+- Zuletzt: 27.11.2026 Keel-Übernahme (Sprint 0) abgeschlossen; Lücken eingeordnet (D-014)
+- Next action: S-008 Kategorien-Editor.js entfernen, dann S-009 README, S-010 Tests, S-011 Sicherheitsaudit
 
 ## Open items
-- Unresolved user questions: Einordnung G-01–G-11; Lizenz (G-03); Kategorien-Editor umstellen oder entfernen (G-02)
+- Unresolved user questions: Lizenz (G-03, Nutzer entscheidet später)
 - Open Design Requests: none
 - Unverified external steps/assets: Verhalten in Scriptable (hier nicht ausführbar)
 - Forge issues in progress: none
 - Unpushed local commits: siehe `git log origin/claude/elegant-archimedes-tm9byp..`
 
 ### Deferred items (consciously postponed work)
-- none
+- G-04, G-06, G-08–G-11 beim Anfassen (S-012–S-017, `docs/sprints/deferred.md`)
 
-Last updated: 2026-11-27 – Keel-Übernahme begonnen
+Last updated: 2026-11-27 – Keel-Übernahme abgeschlossen, Sprint 1 geplant

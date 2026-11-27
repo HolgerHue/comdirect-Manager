@@ -1,7 +1,7 @@
 # Lückenprüfung der Übernahme (27.11.2026)
 
 > Gegen Keels Standards, aus Befehlen und Dateien belegt. Einordnung mit dem Nutzer: **jetzt** (Sprint 1), **beim Anfassen** (deferred), **akzeptiert**.
-> Vorschlag unten; die Einordnung wird bestätigt, sobald der Nutzer geantwortet hat.
+> Einordnung bestätigt am 27.11.2026 (D-014).
 
 | ID | Lücke | Wo / Beleg | Schwere | Standard | Vorschlag |
 |---|---|---|---|---|---|
@@ -25,4 +25,4 @@
 - Geheimnis im Verlauf: `git log -p | grep` auf Schlüsselmuster ohne Fund (27.11.2026).
 
 ## Einordnung
-Wartet auf den Nutzer (Antwort in PROGRESS → Open items).
+Mit dem Nutzer am 27.11.2026 (D-014): **jetzt** (Sprint 1) G-01 → S-009, G-02 → S-008 (Editor entfernen), G-05 → S-010, G-07 → S-011. **Beim Anfassen** (deferred) G-04, G-06, G-08, G-09, G-10, G-11 → S-012–S-017. **Offen:** G-03 Lizenz – Nutzer entscheidet später.

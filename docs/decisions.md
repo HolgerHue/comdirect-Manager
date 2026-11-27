@@ -93,3 +93,10 @@
 - Why: Voreinstellung bei der Übernahme; die Agent Skills stehen in der Sitzung ohnehin zur Verfügung.
 - Alternatives rejected (and why): Pakete wie Hotelsoftware kopieren – dort auf Django zugeschnitten.
 - Supersedes: none
+
+## D-014 – Einordnung der Übernahme-Lücken
+- Date / phase: 2026-11-27 / Adoption
+- Decision: Sprint 1 behebt G-01 (README), G-02 (Kategorien-Editor.js wird entfernt; der eingebaute Editor in Finance.js bleibt), G-05 (Tests), G-07 (Sicherheitsaudit). G-04, G-06, G-08–G-11 werden beim Anfassen erledigt (`docs/sprints/deferred.md`). G-03 (Lizenz) entscheidet der Nutzer später.
+- Why: Antwort des Nutzers vom 27.11.2026.
+- Alternatives rejected (and why): Editor auf Depotbestand umstellen – doppelter Weg neben dem eingebauten Editor.
+- Supersedes: none

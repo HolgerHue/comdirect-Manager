@@ -11,7 +11,7 @@
     {
       "sprint": 0,
       "goal": "Keel-Übernahme (Adoption) des comdirect-Managers, ohne Codeänderung",
-      "status": "in-progress",
+      "status": "done",
       "file": "docs/sprints/sprint-0.md",
       "slices": [
         {
@@ -142,9 +142,9 @@
         {
           "id": "S-007",
           "title": "Abschluss: Commit, Übergabe",
-          "status": "not-started",
+          "status": "done",
           "original_hours": 0.25,
-          "residual_hours": 0.25,
+          "residual_hours": 0,
           "change_kind": "added",
           "parent_slice": null,
           "owns": [
@@ -156,31 +156,231 @@
           ],
           "criteria": [
             "ADOPT-6"
-          ]
+          ],
+          "actual_hours": 0.0,
+          "actual_source": "measured"
         }
       ],
       "original_estimated_hours": 5.75,
-      "completed_original_hours": 5.5,
+      "completed_original_hours": 5.75,
       "actual_hours": 0.37,
-      "remaining_hours": 0.25,
-      "percent_done": 95.7
+      "remaining_hours": 0,
+      "percent_done": 100.0
+    },
+    {
+      "sprint": 1,
+      "goal": "Lücken „jetzt“ aus der Übernahme beheben (D-014)",
+      "status": "not-started",
+      "file": "docs/sprints/sprint-1.md",
+      "slices": [
+        {
+          "id": "S-008",
+          "title": "G-02 Kategorien-Editor.js entfernen, Doku und INDEX anpassen",
+          "status": "not-started",
+          "original_hours": 0.25,
+          "residual_hours": 0.25,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-02"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-02"
+          ]
+        },
+        {
+          "id": "S-009",
+          "title": "G-01 README auf Finance.js 3.31 (Depotbestand) umstellen",
+          "status": "not-started",
+          "original_hours": 0.5,
+          "residual_hours": 0.5,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-01"
+          ],
+          "estimate_changes": [],
+          "depends_on": [
+            "S-008"
+          ],
+          "criteria": [
+            "G-01"
+          ]
+        },
+        {
+          "id": "S-010",
+          "title": "G-05 Testgerüst (Node, Attrappen der Scriptable-APIs) und erste Tests: toNumber, Parser Finanzreport/Steuer, FIFO",
+          "status": "not-started",
+          "original_hours": 3.0,
+          "residual_hours": 3.0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-05"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-05"
+          ]
+        },
+        {
+          "id": "S-011",
+          "title": "G-07 Sicherheitsaudit nach references/security-audit.md (HTML-Ausgabe, Aktionen, Order)",
+          "status": "not-started",
+          "original_hours": 3.0,
+          "residual_hours": 3.0,
+          "change_kind": "added",
+          "parent_slice": null,
+          "owns": [
+            "G-07"
+          ],
+          "estimate_changes": [],
+          "depends_on": [],
+          "criteria": [
+            "G-07"
+          ]
+        }
+      ],
+      "original_estimated_hours": 6.75,
+      "completed_original_hours": 0,
+      "actual_hours": 0,
+      "remaining_hours": 6.75,
+      "percent_done": 0.0
     }
   ],
   "totals": {
-    "original_estimated_hours": 5.75,
-    "completed_original_hours": 5.5,
+    "original_estimated_hours": 12.5,
+    "completed_original_hours": 5.75,
     "actual_hours": 0.37,
-    "remaining_hours": 0.25,
-    "deviation_hours": -5.13,
-    "pace_factor": 0.0229,
+    "remaining_hours": 6.75,
+    "deviation_hours": -5.38,
+    "pace_factor": 0.0218,
     "pace_sample": {
-      "slices": 5,
-      "estimated_hours": 5.25,
+      "slices": 6,
+      "estimated_hours": 5.5,
       "actual_hours": 0.12
     },
-    "projected_remaining_hours": 0.0057,
-    "percent_done": 95.7
+    "projected_remaining_hours": 0.1473,
+    "percent_done": 46.0
   },
-  "deferred": [],
+  "deferred": [
+    {
+      "id": "S-012",
+      "title": "G-04 Namen vereinheitlichen (ohne APP.name zu ändern)",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-04"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-04"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-013",
+      "title": "G-06 Doppelungen messen und zusammenführen",
+      "status": "not-started",
+      "original_hours": 2.0,
+      "residual_hours": 2.0,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-06"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-06"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-014",
+      "title": "G-08 Hinweis Datenschutz bei KI-Vorschlägen",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-08"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-08"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-015",
+      "title": "G-09 Prüfsumme für pdf.js",
+      "status": "not-started",
+      "original_hours": 0.5,
+      "residual_hours": 0.5,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-09"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-09"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-016",
+      "title": "G-10 Barrierefreiheit der WebView-Seiten prüfen",
+      "status": "not-started",
+      "original_hours": 2.0,
+      "residual_hours": 2.0,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-10"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-10"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    },
+    {
+      "id": "S-017",
+      "title": "G-11 Forge-Issues erfassen (docs/issues.md)",
+      "status": "not-started",
+      "original_hours": 0.25,
+      "residual_hours": 0.25,
+      "change_kind": "added",
+      "parent_slice": null,
+      "owns": [
+        "G-11"
+      ],
+      "estimate_changes": [],
+      "depends_on": [],
+      "criteria": [
+        "G-11"
+      ],
+      "target": "beim Anfassen",
+      "reason": "fix when touched (D-014)"
+    }
+  ],
   "note": "Generated by scripts/keel-time plan. Never edit by hand. Contingency and deferred items excluded."
 }
