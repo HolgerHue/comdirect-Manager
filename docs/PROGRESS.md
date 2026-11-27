@@ -60,7 +60,7 @@
 - Open Design Requests: none
 - Unverified external steps/assets: Verhalten in Scriptable (hier nicht ausführbar)
 - Forge issues in progress: none
-- Unpushed local commits: siehe `git log origin/claude/elegant-archimedes-tm9byp..`
+- Unpushed local commits: keine (Sprint 0 über PR #1 nach main gemergt, 27.11.2026)
 
 ### Deferred items (consciously postponed work)
 - G-04, G-06, G-08–G-11 beim Anfassen (S-012–S-017, `docs/sprints/deferred.md`)
